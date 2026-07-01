@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community Issue Reporter | Public Issue Log</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">&#128204; Community Issue Reporter</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="report.html">Report an Issue</a>
+    <a href="submissions.html" class="active">Public Issue Log</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Public issue log</h1>
+  <p class="subtitle">Every issue reported so far, newest first.</p>
+
+  <div class="toolbar">
+    <input type="text" id="searchBox" placeholder="Search by name or description...">
+    <select id="categoryFilter">
+      <option value="">All categories</option>
+      <option value="Streetlight">Broken streetlight</option>
+      <option value="Garbage">Garbage not collected</option>
+      <option value="Pothole">Pothole / road damage</option>
+      <option value="Water">Water supply issue</option>
+      <option value="Other">Other</option>
+    </select>
+    <select id="statusFilter">
+      <option value="">All statuses</option>
+      <option value="open">Open</option>
+      <option value="closed">Resolved</option>
+    </select>
+  </div>
+
+  <div id="list"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">
+    No issues match right now. <a href="report.html">Report one</a> to get started.
+  </div>
+</main>
+
+<footer>Community Issue Reporter &mdash; built for Full Stack Web Development Internship, Task 3.</footer>
+
+<script src="script.js"></script>
+<script>
+  function renderList() {
+    const issues = getIssues().slice().reverse();
+    const search = document.getElementById("searchBox").value.trim().toLowerCase();
+    const categoryFilter = document.getElementById("categoryFilter").value;
+    const statusFilter = document.getElementById("statusFilter").value;
+
+    const filtered = issues.filter((s) => {
+      const matchesSearch =
+        !search ||
+        s.name.toLowerCase().includes(search) ||
+        s.message.toLowerCase().includes(search);
+      const matchesCategory = !categoryFilter || s.category === categoryFilter;
+      const matchesStatus = !statusFilter || s.status === statusFilter;
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+
+    const list = document.getElementById("list");
+    const emptyState = document.getElementById("emptyState");
+    list.innerHTML = "";
+
+    if (filtered.length === 0) {
+      emptyState.style.display = "block";
+      return;
+    }
+    emptyState.style.display = "none";
+
+    filtered.forEach((s) => {
+      const card = document.createElement("div");
+      card.className = "issue-card";
+
+      const badgeClass = s.status === "open" ? "open" : "closed";
+      const badgeText = s.status === "open" ? "Open" : "Resolved";
+
+      card.innerHTML = `
+        <div class="top-row">
+          <div>
+            <div class="reporter">${escapeHtml(s.name)} &mdash; <span style="color:var(--muted); font-weight:500;">${escapeHtml(s.category)}</span></div>
+            <div class="reporter-email">${escapeHtml(s.email)}</div>
+          </div>
+          <span class="badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="description">${escapeHtml(s.message)}</div>
+        <div class="time">Reported ${formatTime(s.timestamp)}</div>
+      `;
+
+      if (s.status === "open") {
+        const btn = document.createElement("button");
+        btn.className = "small";
+        btn.style.marginTop = "12px";
+        btn.textContent = "Mark Resolved";
+        btn.addEventListener("click", () => {
+          resolveIssue(s.id);
+          renderList();
+        });
+        card.appendChild(btn);
+      }
+
+      list.appendChild(card);
+    });
+  }
+
+  renderList();
+  document.getElementById("searchBox").addEventListener("input", renderList);
+  document.getElementById("categoryFilter").addEventListener("change", renderList);
+  document.getElementById("statusFilter").addEventListener("change", renderList);
+</script>
+</body>
+</html>
